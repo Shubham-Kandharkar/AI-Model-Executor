@@ -1,0 +1,45 @@
+services:
+  springboot:
+    build:
+      context: ./SpringBoot-Service
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - ollama
+  
+  reactjs:
+    build:
+      context: ./React-UI
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  ollama-pull-model:
+    image: ollama/ollama:latest
+    container_name: ollama-pull-model
+    depends_on:
+      - ollama
+    environment:
+      # Tell this container to talk to the main 'ollama' container
+      - OLLAMA_HOST=ollama:11434
+    # The command it runs before exiting
+    command: pull qwen2.5-coder:7b
+
+volumes:
+  ollama_data:
